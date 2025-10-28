@@ -124,6 +124,9 @@ com a proporção 70/30). Use um gráfico do tipo boxplot with whiskers para fac
 comparação dos valores para diferentes k.
 2. Imprima a matriz de confusão de um dos testes para cada valor de k.
 3. Considerando o conjunto de dados na Fig. 3, porque deve o k ser sempre impar?
+
+
+
 Exercício 3
 Usando o conjunto de dados do exercício anterior, implemente um classificador Naive
 Bayes.
