@@ -1,0 +1,39 @@
+# =============================================================================
+# Git Ignore - IAA MEI 2025
+# =============================================================================
+
+# --- Ficheiros Grandes (>100MB) ---
+# Estes ficheiros excedem o limite do GitHub
+ProjetoFinal/consumo15m_11_2025.csv
+ProjetoFinal/data/intermediate/d4maia_series_per_cpe.csv
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# --- IDEs ---
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Dados temporários ---
+*.tmp
+*.temp
+*.log

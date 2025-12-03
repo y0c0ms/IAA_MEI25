@@ -1,0 +1,36 @@
+# =============================================================================
+# D4Maia Project - Requisitos Python
+# =============================================================================
+# Projeto: Previsão de Consumo Energético
+# UC: Introdução à Aprendizagem Automática - MEI 2025/2026
+# Metodologia: CRISP-DM
+# =============================================================================
+
+# --- Manipulação de Dados ---
+pandas>=2.0.0
+numpy>=1.24.0
+
+# --- Visualização ---
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# --- Machine Learning (Scikit-learn) ---
+scikit-learn>=1.3.0
+
+# --- Séries Temporais (ARIMA) ---
+statsmodels>=0.14.0
+
+# --- Deep Learning (LSTM) ---
+tensorflow>=2.13.0
+
+# --- Gradient Boosting ---
+xgboost>=2.0.0
+
+# --- Utilitários Jupyter ---
+jupyter>=1.0.0
+ipykernel>=6.25.0
+notebook>=7.0.0
+
+# --- Opcional: Avisos e Logging ---
+# warnings (built-in)
+# os (built-in)
