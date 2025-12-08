@@ -116,7 +116,7 @@ O dataset D4Maia contém as seguintes variáveis:
 ```
 Dataset Original:
 - Total de registos: ~6,000,000
-- Número de CPEs: 23 instalações municipais
+- Número de CPEs: 89 instalações municipais
 - Período temporal: Dados de 2024-2025
 - Missing values: Tratados na fase de preparação
 ```
@@ -235,8 +235,8 @@ Para cada CPE:
 | Ficheiro | Descrição | Registos |
 |----------|-----------|----------|
 | `d4maia_series_per_cpe.csv` | Séries temporais completas | ~4.5M |
-| `d4maia_cpe_features.csv` | Features agregadas por CPE | 23 |
-| `d4maia_ts_train_test_index.csv` | Índices de split temporal | 23 |
+| `d4maia_cpe_features.csv` | Features agregadas por CPE | 89 |
+| `d4maia_ts_train_test_index.csv` | Índices de split temporal | 89 |
 
 ---
 
@@ -265,48 +265,44 @@ Para cada CPE:
 
 **Teste 2: K-Means COM normalização (StandardScaler)**
 - K escolhido: **2 clusters**
-- Silhouette Score: **0.42** (boa separação)
-- Interpretação clara dos perfis
+- Silhouette Score: **0.91** (valor elevado, mas resultado degenerado: 1 CPE num cluster e 88 no outro)
+- Interpretação limitada devido ao desbalanceamento extremo dos clusters
 
 **Conclusão**: **Normalização é CRÍTICA** para clustering baseado em distância.
 
 #### 5.1.3 Caracterização dos Clusters (K-Means, k=2)
 
-**Cluster 0: "Consumidores de Alto Volume"**
-- Tamanho: 8 CPEs
-- Consumo médio diário: **15.3 kWh**
-- Padrão: Picos pronunciados em horário diurno (09:00-18:00)
-- Variabilidade: Alta (CV = 0.85)
-- Interpretação: Edifícios de serviços intensivos (escolas, centros cívicos)
+**Cluster 0: "Extremo de Alto Consumo"**
+- Tamanho: 1 CPE
+- Consumo médio diário (média agregada): **~218 kWh**; desvio **~103**
+- Observação: Cluster muito pequeno; alto consumo concentra-se num único CPE
 
-**Cluster 1: "Consumidores de Baixo Volume Constante"**
-- Tamanho: 15 CPEs
-- Consumo médio diário: **3.2 kWh**
-- Padrão: Consumo distribuído uniformemente (24/7)
-- Variabilidade: Baixa (CV = 0.42)
-- Interpretação: Edifícios com operação contínua (iluminação pública, serviços de emergência)
+**Cluster 1: "Demais CPEs de Baixo/Moderado Consumo"**
+- Tamanho: 88 CPEs
+- Consumo médio diário (média agregada): **~6 kWh**; desvio **~5**
+- Observação: A interpretação é limitada porque quase todos os CPEs ficam num único cluster
 
 #### 5.1.4 Resultados DBSCAN
 
 **Melhor configuração**:
-- `eps = 0.7`, `min_samples = 3`
-- Clusters encontrados: **2 clusters + 3 outliers**
-- Proporção de ruído: **13%**
+- `eps = 1.5`, `min_samples = 5`
+- Clusters encontrados: **2 clusters + 35 outliers**
+- Proporção de ruído: **39.3%**
 
 **Outliers identificados**:
-- CPEs com padrões únicos ou consumo extremamente variável
-- Candidatos a investigação para anomalias ou desperdícios
+- 35 CPEs com padrões de consumo atípicos (ruído)
+- Candidatos a investigação para anomalias ou desperdícios; percentagem de ruído elevada
 
 #### 5.1.5 Métricas de Validação
 
-| Métrica | K-Means (k=2) | DBSCAN (0.7, 3) |
+| Métrica | K-Means (k=2) | DBSCAN (1.5, 5) |
 |---------|---------------|------------------|
-| **Silhouette Score** | 0.42 | 0.38 |
-| **Calinski-Harabasz** | 28.5 | 22.1 |
-| **Davies-Bouldin** | 0.72 | 0.81 |
-| **Nº Outliers** | 0 | 3 |
+| **Silhouette Score** | 0.91 | 0.35 |
+| **Calinski-Harabasz** | – | – |
+| **Davies-Bouldin** | – | – |
+| **Nº Outliers** | 0 | 35 |
 
-**Interpretação**: K-Means apresenta melhor separação global, mas DBSCAN oferece vantagem na deteção de outliers.
+**Interpretação**: O K-Means apresenta silhouette elevado, mas resulta em clusters extremamente desbalanceados (1 vs 88 CPEs), limitando a utilidade prática. O DBSCAN identifica muitos outliers (39.3%), sinalizando padrões irregulares, mas com alta percentagem de ruído.
 
 ---
 
@@ -543,7 +539,7 @@ XGBoost         ███████████████░░░░░  1.
 
 | Tipo de Modelo | Impacto da Normalização | Recomendação |
 |----------------|-------------------------|--------------|
-| **Clustering (K-Means, DBSCAN)** | ⚠️ **CRÍTICO** - Obrigatório | **Sempre normalizar** |
+| **Clustering (K-Means, DBSCAN)** | ⚠️ **ALTO** - Necessário, mas resultados podem ficar desbalanceados | **Normalizar e verificar balanceamento** |
 | **LSTM (Redes Neuronais)** | ⚠️ **IMPORTANTE** - Melhora convergência | **Sempre normalizar** |
 | **MLP** | ⚡ **VARIÁVEL** - Depende do dataset | Testar ambas configurações |
 | **Random Forest** | ✅ **NEUTRO** - Sem impacto | Normalização opcional |
@@ -573,7 +569,6 @@ XGBoost         ███████████████░░░░░  1.
 **CPE: PT0002000033074862LZ**
 - MAE (ARIMA): 0.32 kWh
 - Padrão: Consumo muito regular, picos diários consistentes
-- Cluster: 1 (Baixo Volume Constante)
 - Interpretação: Possível iluminação pública ou sistema de monitorização
 
 #### 6.3.2 CPEs com Pior Previsibilidade (MAE > 2.0 kWh)
@@ -581,17 +576,16 @@ XGBoost         ███████████████░░░░░  1.
 **CPE: PT0002000081997398TD**
 - MAE (ARIMA): 2.47 kWh
 - Padrão: Alta variabilidade, picos imprevisíveis
-- Cluster: 0 (Alto Volume)
 - Interpretação: Possível escola ou centro desportivo com uso variável
 
 #### 6.3.3 Relação entre Cluster e Previsibilidade
 
 | Cluster | MAE Médio | Interpretação |
 |---------|-----------|---------------|
-| **Cluster 1** (Baixo Volume Constante) | **0.85 kWh** | Mais previsível ✓ |
-| **Cluster 0** (Alto Volume) | **1.45 kWh** | Menos previsível |
+| **Cluster 1** (88 CPEs) | – | Cluster agregado de baixo/moderado consumo |
+| **Cluster 0** (1 CPE) | – | Único CPE de consumo extremo |
 
-**Conclusão**: CPEs com consumo constante e baixo volume são mais fáceis de prever.
+**Conclusão**: O clustering K-Means ficou desbalanceado (1 vs 88), dificultando correlacionar clusters com previsibilidade. A análise de previsibilidade deve ser feita por CPE, não pelos clusters atuais.
 
 ### 6.4 Utilidade Prática para o Município da Maia
 
@@ -604,14 +598,14 @@ XGBoost         ███████████████░░░░░  1.
 
 **2. Deteção de Anomalias**
 - **Uso**: Alertas quando consumo real > previsão + 2σ
-- **Clusters**: Outliers identificados por DBSCAN são candidatos a auditoria
-- **Benefício**: Identificação precoce de desperdícios ou avarias
+- **Clusters**: Outliers identificados por DBSCAN são candidatos a auditoria (atual ruído alto: 39.3%)
+- **Benefício**: Identificação precoce de desperdícios ou avarias, com revisão de parâmetros para reduzir ruído
 
 **3. Tarifas Diferenciadas**
-- **Uso**: Aplicar tarifas específicas por cluster identificado
-- **Cluster 0**: Tarifa por demanda (picos altos)
-- **Cluster 1**: Tarifa flat (consumo constante)
-- **Benefício**: Otimização de custos por perfil
+- **Uso**: Aplicar tarifas específicas por cluster identificado (após reequilíbrio dos clusters)
+- **Cluster 0**: Tarifa por demanda (picos altos) — atualmente apenas 1 CPE
+- **Cluster 1**: Tarifa flat (consumo constante) — concentra 88 CPEs
+- **Benefício**: Otimização de custos por perfil, após redistribuição ou revisão de k
 
 **4. Benchmarking entre Edifícios**
 - **Uso**: Comparar CPEs do mesmo cluster (mesma tipologia)
@@ -622,11 +616,11 @@ XGBoost         ███████████████░░░░░  1.
 
 **Curto Prazo (0-3 meses)**:
 1. Implementar sistema de alertas baseado em ARIMA para os 5 CPEs principais
-2. Investigar os 3 outliers identificados por DBSCAN
+2. Investigar os 35 outliers identificados por DBSCAN (ruído alto; rever parâmetros)
 3. Criar dashboard com previsões semanais
 
 **Médio Prazo (3-6 meses)**:
-1. Expandir sistema de previsão para todos os 23 CPEs
+1. Expandir sistema de previsão para todos os 89 CPEs
 2. Implementar re-treino mensal dos modelos
 3. Integrar com sistema de faturação energética
 
@@ -642,9 +636,9 @@ XGBoost         ███████████████░░░░░  1.
 ### 7.1 Conclusões Principais
 
 #### 7.1.1 Sobre Clustering
-✅ **Sucesso**: Identificação clara de 2 perfis de consumo distintos  
-✅ **Sucesso**: Deteção de 3 outliers para investigação  
-⚠️ **Limitação**: Número reduzido de CPEs (23) limita análise estatística  
+⚠️ **Parcial**: K-Means produziu 2 clusters, mas extremamente desbalanceados (1 vs 88 CPEs)  
+⚠️ **Limitação**: DBSCAN identificou 35 outliers (39.3%), indicando ruído elevado  
+⚠️ **Nota**: A utilidade prática do clustering atual é limitada; requer reequilíbrio ou filtragem de CPEs
 
 #### 7.1.2 Sobre Previsão de Séries Temporais
 ✅ **Sucesso**: ARIMA superou baseline em 22%, demonstrando viabilidade  
@@ -663,10 +657,9 @@ XGBoost         ███████████████░░░░░  1.
 
 ### 7.2 Limitações do Estudo
 
-1. **Volume de Dados Limitado**
-   - Apenas 23 CPEs disponíveis
-   - Período temporal limitado (~1 ano)
-   - Impacto: Dificuldade em treinar modelos complexos como LSTM
+1. **Dados desbalanceados para clustering**
+   - 89 CPEs, mas clusters ficaram 1 vs 88 (K-Means) e 39% ruído (DBSCAN)
+   - Impacto: Segmentação pouco acionável; precisa reequilíbrio ou filtragem prévia
 
 2. **Ausência de Variáveis Exógenas**
    - Não foram considerados: temperatura, eventos, feriados
@@ -855,4 +848,4 @@ ProjetoFinal/
 ---
 
 **Fim do Relatório**  
-*Última atualização: Dezembro 2025*
+*Última atualização: 7 Dezembro 2025*
