@@ -34,15 +34,16 @@ O Município da Maia enfrenta o desafio de otimizar a gestão energética dos se
 3. **Modelos Supervisionados**: Desenvolver modelos preditivos baseados em features agregadas (RF, XGBoost, MLP)
 4. **Análise de Normalização**: Avaliar o impacto da normalização de dados em todos os modelos
 
-### 1.3 Principais Resultados
+### 1.3 Principais Resultados (10 CPEs, horizonte 1 semana)
 
 | Abordagem | Melhor Modelo | MAE Médio | Melhoria vs Baseline |
-|-----------|---------------|-----------|---------------------|
-| **Séries Temporais** | ARIMA | 0.908 | +22.2% |
-| **Features Agregadas** | MLP (sem norm.) | 1.043 | Comparável |
-| **Clustering** | K-Means (2 clusters) | Silhouette: N/A | Perfis distintos identificados |
+|-----------|---------------|-----------|----------------------|
+| **Séries Temporais** | ARIMA | 0.804 | +34.3% |
+| **Séries Temporais** | LSTM | 1.049 | +14.4% |
+| **Features Agregadas** | MLP (sem norm.) | 1.675 | Pior que baseline semanal |
+| **Clustering** | K-Means (k=2) | Silhouette: N/A (1 vs 88) | Estrutura degenerada |
 
-**Conclusão Principal**: Os modelos de séries temporais (especialmente ARIMA) demonstraram capacidade preditiva superior à baseline "semana anterior", com melhorias significativas para diversos CPEs. A normalização revelou-se crítica para clustering e redes neuronais (LSTM, MLP).
+**Conclusão Principal**: ARIMA mantém clara superioridade face à baseline semanal com avaliação harmonizada. LSTM melhora a baseline, mas abaixo de ARIMA. Os modelos de features não superaram a baseline semanal. Clustering segue degenerado (1 vs 88 no K-Means; DBSCAN com 39% de ruído), requer retuning.
 
 ---
 
@@ -242,7 +243,7 @@ Para cada CPE:
 
 ## 5. Modeling
 
-### 5.1 Experiência 1: Clustering (Aprendizagem Não Supervisionada)
+### 5.1 Experiência 1: Clustering (Aprendizagem Não Supervisionada) — estado atual
 
 #### 5.1.1 Algoritmos Implementados
 
@@ -265,10 +266,10 @@ Para cada CPE:
 
 **Teste 2: K-Means COM normalização (StandardScaler)**
 - K escolhido: **2 clusters**
-- Silhouette Score: **0.91** (valor elevado, mas resultado degenerado: 1 CPE num cluster e 88 no outro)
-- Interpretação limitada devido ao desbalanceamento extremo dos clusters
+- Silhouette: não utilizável; resultado degenerado (1 CPE num cluster, 88 no outro)
+- Interpretação: inválida para perfis; requer nova escolha de k / redução de dimensionalidade / filtragem
 
-**Conclusão**: **Normalização é CRÍTICA** para clustering baseado em distância.
+**Conclusão**: Normalização é crítica, mas o clustering permanece não acionável (1 vs 88). DBSCAN continua com 39.3% de ruído; precisa retuning (por exemplo, PCA + eps/min_samples revistos).
 
 #### 5.1.3 Caracterização dos Clusters (K-Means, k=2)
 
@@ -308,43 +309,39 @@ Para cada CPE:
 
 ### 5.2 Experiência 2(a): Séries Temporais (ARIMA e LSTM)
 
-#### 5.2.1 Baseline: "Semana Anterior"
+#### 5.2.1 Baseline: "Semana Anterior" (10 CPEs, horizonte 1 semana)
 
 **Metodologia**:
 - Previsão para cada ponto: `y_pred(t) = y_real(t - 672)`
 - Onde 672 = pontos por semana (7 dias × 96 pontos/dia)
 
-**Resultados (média de 5 CPEs)**:
+**Resultados (média de 10 CPEs)**:
 
 | Métrica | Valor |
 |---------|-------|
-| **MAE** | 1.167 kWh |
-| **RMSE** | 1.695 kWh |
-| **MAPE** | 12.4% |
+| **MAE** | 1.225 kWh |
+| **RMSE** | 2.003 kWh |
 
-**Interpretação**: Baseline razoável que captura sazonalidade semanal, mas não se adapta a mudanças de padrão.
+**Interpretação**: Captura sazonalidade semanal, mas não se adapta a mudanças de padrão.
 
-#### 5.2.2 Modelo ARIMA
+#### 5.2.2 Modelo ARIMA (10 CPEs, horizonte 1 semana)
 
 **Configuração**:
 - Ordem testada: (1,1,1), (2,1,2), (5,1,0) via grid search
 - Melhor ordem média: **(2,1,1)**
 - Sazonal: SARIMA com período 96 (diário)
 
-**Resultados (média de 5 CPEs)**:
+**Resultados (média de 10 CPEs)**:
 
 | Métrica | Valor | vs Baseline |
 |---------|-------|-------------|
-| **MAE** | **0.908 kWh** | **-22.2%** ✓ |
-| **RMSE** | **1.306 kWh** | **-22.9%** ✓ |
-| **MAPE** | 9.8% | -21.0% ✓ |
+| **MAE** | **0.804 kWh** | **-34.3%** ✓ |
+| **RMSE** | **1.176 kWh** | **-41.2%** ✓ |
 
 **Observações**:
-- Melhoria consistente em todos os CPEs
-- Melhor performance em séries com padrões regulares
-- Tempo de treino: ~30 segundos por CPE
+- Melhor desempenho geral; horizonte de avaliação harmonizado (1 semana).
 
-#### 5.2.3 Modelo LSTM
+#### 5.2.3 Modelo LSTM (10 CPEs, horizonte 1 semana)
 
 **Arquitetura**:
 ```python
@@ -364,31 +361,28 @@ Dense Output: 1 unidade (previsão para próximo ponto)
 - Epochs: 50 (com early stopping)
 - Loss: MSE
 
-**Resultados (média de 5 CPEs)**:
+**Resultados (média de 10 CPEs)**:
 
 | Métrica | Valor | vs Baseline |
 |---------|-------|-------------|
-| **MAE** | 1.187 kWh | +1.7% ✗ |
-| **RMSE** | 1.517 kWh | -10.5% ~ |
-| **MAPE** | 13.2% | +6.5% ✗ |
+| **MAE** | 1.049 kWh | **-14.4%** ✓ |
+| **RMSE** | 1.382 kWh | **-31.0%** ✓ |
 
 **Observações**:
-- Performance inferior a ARIMA (possível overfitting ou dados insuficientes)
-- Alta variabilidade entre CPEs
-- Tempo de treino: ~5 minutos por CPE (GPU)
+- Melhora a baseline, mas atrás de ARIMA; horizonte harmonizado em 1 semana.
 
 #### 5.2.4 Comparação dos Modelos de Séries Temporais
 
-**Ranking por MAE**:
-1. **ARIMA**: 0.908 kWh ⭐ (melhor)
-2. **Baseline**: 1.167 kWh
-3. **LSTM**: 1.187 kWh
+**Ranking por MAE (10 CPEs, 1 semana)**:
+1. **ARIMA**: 0.804 kWh ⭐
+2. **LSTM**: 1.049 kWh
+3. **Baseline**: 1.225 kWh
 
 **Conclusão**: **ARIMA demonstrou ser o modelo mais eficaz** para este dataset, com melhorias consistentes e menor complexidade computacional.
 
 ---
 
-### 5.3 Experiência 2(b): Modelos Supervisionados com Features
+### 5.3 Experiência 2(b): Modelos Supervisionados com Features (10 CPEs, alvo = média semanal)
 
 #### 5.3.1 Construção do Dataset Supervisionado
 
@@ -406,7 +400,7 @@ for cpe in cpes:
         y = data[cpe, t:t+7days].mean()
 ```
 
-**Resultado**: 5 CPEs × ~8 instâncias de teste = 40 amostras totais
+**Resultado**: 10 CPEs × 119 instâncias cada = 1.190 amostras totais
 
 #### 5.3.2 Baseline: Média da Semana Anterior
 
@@ -422,14 +416,14 @@ for cpe in cpes:
 - min_samples_split: 2
 - random_state: 42
 
-**Resultados**:
+**Resultados (10 CPEs)**:
 
-| Normalização | MAE | RMSE | vs Baseline |
-|--------------|-----|------|-------------|
-| **Não** | **1.209 kWh** | 1.561 kWh | -0.1% ~ |
-| **Sim (StandardScaler)** | **1.210 kWh** | 1.562 kWh | 0.0% ~ |
+| Normalização | MAE | RMSE | vs Baseline (1.6464) |
+|--------------|-----|------|-----------------------|
+| **Não** | **1.6869 kWh** | 2.4298 kWh | -2.5% |
+| **Sim (StandardScaler)** | **1.6856 kWh** | 2.4288 kWh | -2.4% |
 
-**Conclusão**: Normalização **não afeta** Random Forest (esperado para modelos baseados em árvores).
+**Conclusão**: Normalização não afeta de forma relevante RF; ambos ficam ligeiramente piores que a baseline semanal.
 
 #### 5.3.4 XGBoost
 
@@ -439,12 +433,12 @@ for cpe in cpes:
 - max_depth: 6
 - subsample: 0.8
 
-**Resultados**:
+**Resultados (10 CPEs)**:
 
-| Normalização | MAE | RMSE | vs Baseline |
-|--------------|-----|------|-------------|
-| **Não** | **1.440 kWh** | 1.836 kWh | +19.0% ✗ |
-| **Sim** | **1.440 kWh** | 1.836 kWh | +19.0% ✗ |
+| Normalização | MAE | RMSE | vs Baseline (1.6464) |
+|--------------|-----|------|-----------------------|
+| **Não** | **1.9101 kWh** | 2.7235 kWh | -16.0% |
+| **Sim** | **1.9101 kWh** | 2.7235 kWh | -16.0% |
 
 **Conclusão**: XGBoost teve performance inferior (possível necessidade de tuning mais agressivo ou overfitting).
 
@@ -464,26 +458,24 @@ Output: 1 neurónio (regressão)
 - Batch size: 16
 - Epochs: 100 (early stopping)
 
-**Resultados**:
+**Resultados (10 CPEs)**:
 
-| Normalização | MAE | RMSE | vs Baseline |
-|--------------|-----|------|-------------|
-| **Não** | **1.043 kWh** | 1.519 kWh | **-13.8%** ✓ |
-| **Sim (StandardScaler)** | **1.347 kWh** | 1.796 kWh | +11.3% ✗ |
+| Normalização | MAE | RMSE | vs Baseline (1.6464) |
+|--------------|-----|------|-----------------------|
+| **Não** | **1.6749 kWh** | 2.5742 kWh | -1.7% |
+| **Sim (StandardScaler)** | **1.8299 kWh** | 2.7865 kWh | -11.1% |
 
-**Observação Surpreendente**: MLP teve melhor performance **sem normalização** neste caso específico, contrariando a expectativa teórica. Possíveis razões:
-- Dataset muito pequeno (40 amostras)
-- Normalização pode ter reduzido informação útil sobre escala
-- Necessidade de ajuste de hiperparâmetros específico para dados normalizados
+**Observações**:
+- Nenhum modelo de features superou a baseline semanal.
+- Normalização prejudicou o MLP neste cenário.
 
 #### 5.3.6 Comparação dos Modelos Supervisionados
 
-**Ranking por MAE**:
-1. **MLP (sem norm.)**: 1.043 kWh ⭐ (melhor)
-2. **RF (sem norm.)**: 1.209 kWh
-3. **RF (com norm.)**: 1.210 kWh
-4. **MLP (com norm.)**: 1.347 kWh
-5. **XGBoost**: 1.440 kWh
+**Ranking por MAE (todos piores que baseline semanal)**:
+1. **MLP (sem norm.)**: 1.675 kWh
+2. RF (sem/norm.): ~1.687 kWh
+3. MLP (com norm.): 1.830 kWh
+4. XGBoost: 1.910 kWh
 
 ---
 
@@ -491,14 +483,14 @@ Output: 1 neurónio (regressão)
 
 | Abordagem | Melhor Modelo | MAE | Complexidade | Interpretabilidade |
 |-----------|---------------|-----|--------------|-------------------|
-| **Séries Temporais** | ARIMA | **0.908** ⭐ | Média | Baixa |
-| **Features Agregadas** | MLP | 1.043 | Alta | Média |
+| **Séries Temporais** | ARIMA | **0.804** ⭐ | Média | Baixa |
+| **Features Agregadas** | MLP (sem norm.) | 1.675 | Alta | Média |
 
 **Conclusões**:
-1. **ARIMA supera todos os modelos** em termos de MAE
-2. Modelos de features têm vantagem na **interpretabilidade** (importância de features)
-3. LSTM não atingiu potencial esperado (possível falta de dados ou tuning)
-4. Normalização é **contexto-dependente**: crítica para clustering, variável para outros modelos
+1. ARIMA supera todos os modelos em MAE.
+2. LSTM melhora a baseline, mas fica atrás do ARIMA.
+3. Modelos de features não superaram a baseline semanal; úteis pela interpretabilidade, mas requerem mais tuning/dados.
+4. Normalização: crítica para clustering e redes; neutra para árvores; pode degradar MLP neste dataset.
 
 ---
 
@@ -506,18 +498,17 @@ Output: 1 neurónio (regressão)
 
 ### 6.1 Resumo Comparativo de Todos os Modelos
 
-#### 6.1.1 Tabela Final de Resultados
+#### 6.1.1 Tabela Final de Resultados (10 CPEs, horizonte 1 semana)
 
-| Abordagem | Modelo | Normalização | MAE (kWh) | RMSE (kWh) | Ranking |
-|-----------|--------|--------------|-----------|------------|---------|
-| Séries Temporais | **ARIMA** | N/A | **0.908** | **1.306** | 🥇 1º |
-| Features | **MLP** | Não | **1.043** | **1.519** | 🥈 2º |
-| Séries Temporais | **Baseline** | N/A | **1.167** | **1.695** | 3º |
-| Séries Temporais | **LSTM** | Sim | **1.187** | **1.517** | 4º |
-| Features | **RF** | Não | **1.209** | **1.561** | 5º |
-| Features | **RF** | Sim | **1.210** | **1.562** | 6º |
-| Features | **MLP** | Sim | **1.347** | **1.796** | 7º |
-| Features | **XGBoost** | Qualquer | **1.440** | **1.836** | 8º |
+| Abordagem | Modelo | Normalização | MAE (kWh) | RMSE (kWh) |
+|-----------|--------|--------------|-----------|------------|
+| Séries Temporais | **ARIMA** | N/A | **0.804** | **1.176** |
+| Séries Temporais | **LSTM** | Sim | **1.049** | **1.382** |
+| Séries Temporais | **Baseline** | N/A | **1.225** | **2.003** |
+| Features | **MLP** | Não | **1.675** | **2.574** |
+| Features | RF | Não/Sim | ~1.687 | ~2.429 |
+| Features | MLP | Sim | **1.830** | **2.787** |
+| Features | XGBoost | Qualquer | **1.910** | **2.724** |
 
 #### 6.1.2 Visualização: Erro por Modelo
 
@@ -641,19 +632,19 @@ XGBoost         ███████████████░░░░░  1.
 ⚠️ **Nota**: A utilidade prática do clustering atual é limitada; requer reequilíbrio ou filtragem de CPEs
 
 #### 7.1.2 Sobre Previsão de Séries Temporais
-✅ **Sucesso**: ARIMA superou baseline em 22%, demonstrando viabilidade  
-⚠️ **Parcial**: LSTM não atingiu performance esperada (possível falta de dados)  
+✅ **Sucesso**: ARIMA superou baseline em ~34% (MAE) em 10 CPEs, horizonte 1 semana  
+✅ **Parcial**: LSTM melhora baseline (~14%) mas fica atrás de ARIMA  
 ✅ **Sucesso**: Previsões suficientemente precisas para planeamento operacional  
 
 #### 7.1.3 Sobre Modelos Supervisionados
-✅ **Sucesso**: MLP demonstrou capacidade competitiva com features agregadas  
-⚠️ **Limitação**: Dataset pequeno (40 amostras) limita treino robusto  
-❌ **Insucesso**: XGBoost teve performance abaixo do esperado (requer tuning)  
+⚠️ **Limitação**: Nenhum modelo de features (RF/XGB/MLP) superou a baseline semanal; melhor MAE ≈ 1.675  
+✅ **Cobertura maior**: 10 CPEs, 1.190 amostras semanais  
+❌ **Insucesso relativo**: XGBoost e MLP com normalização ficaram piores; RF/MLP sem normalização ficaram ligeiramente abaixo da baseline  
 
 #### 7.1.4 Sobre Normalização
 ✅ **Confirmado**: Crítica para clustering (como esperado teoricamente)  
 ✅ **Confirmado**: Sem impacto em modelos de árvores (RF, XGBoost)  
-⚠️ **Surpresa**: MLP teve melhor performance SEM normalização (contexto específico)  
+⚠️ **Surpresa**: MLP teve melhor performance SEM normalização neste dataset, mas ainda abaixo da baseline semanal  
 
 ### 7.2 Limitações do Estudo
 
