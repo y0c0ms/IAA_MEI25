@@ -37,6 +37,7 @@ from pathlib import Path
 CORE_PACKAGES = [
     "pandas>=2.0.0",
     "numpy>=1.24.0",
+    "scipy>=1.11.0",
     "matplotlib>=3.7.0",
     "seaborn>=0.12.0",
     "scikit-learn>=1.3.0",

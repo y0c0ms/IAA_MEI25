@@ -71,6 +71,7 @@ python install_requirements.py --gpu
 |--------|---------------|-----|
 | pandas | 2.0.0 | Manipulação de dados |
 | numpy | 1.24.0 | Computação numérica |
+| scipy | 1.11.0 | Computação científica |
 | matplotlib | 3.7.0 | Visualização |
 | seaborn | 0.12.0 | Visualização estatística |
 | scikit-learn | 1.3.0 | Machine Learning |
@@ -152,6 +153,7 @@ Após instalação, verificar se tudo funciona:
 ```python
 import pandas as pd
 import numpy as np
+import scipy
 import matplotlib.pyplot as plt
 import seaborn as sns
 import sklearn
@@ -160,8 +162,12 @@ import tensorflow as tf
 import xgboost as xgb
 
 print("✅ Todos os pacotes instalados corretamente!")
+print(f"Pandas: {pd.__version__}")
+print(f"NumPy: {np.__version__}")
+print(f"SciPy: {scipy.__version__}")
 print(f"TensorFlow: {tf.__version__}")
 print(f"Scikit-learn: {sklearn.__version__}")
+print(f"XGBoost: {xgb.__version__}")
 ```
 
 ---
@@ -172,14 +178,15 @@ Após instalação, executar notebooks nesta ordem:
 
 ```
 ProjetoFinal/
-├── 01_data_exploration.ipynb       # Exploração inicial
-├── 02_clustering.ipynb             # K-Means e DBSCAN
-├── 03_feature_engineering.ipynb    # Engenharia de features
-├── 04_time_series_models.ipynb     # ARIMA e LSTM
-├── 05_supervised_models.ipynb      # RF, XGBoost, MLP
-├── 06_normalization_and_comparisons.ipynb  # Avaliação final
-├── data/                           # Dados processados
-└── requisitos/                     # Esta pasta
+├── 01_business_data_understanding.ipynb     # Business & Data Understanding
+├── 02_data_preparation_feature_engineering.ipynb  # Data Preparation
+├── 03_clustering_kmeans_dbscan.ipynb        # K-Means e DBSCAN
+├── 04_timeseries_ARIMA_LSTM.ipynb           # ARIMA e LSTM
+├── 05_supervised_features_RF_XGB_MLP.ipynb  # RF, XGBoost, MLP
+├── 06_normalization_and_comparisons.ipynb   # Avaliação final
+├── data/intermediate/                       # Dados processados
+├── consumo15m_11_2025.csv                   # Dataset original
+└── requisitos/                              # Esta pasta
 ```
 
 ---

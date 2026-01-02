@@ -37,3 +37,8 @@ desktop.ini
 *.tmp
 *.temp
 *.log
+
+# --- Documentos ---
+*.txt
+*.md
+!**/README.md
