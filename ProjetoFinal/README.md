@@ -95,8 +95,8 @@ O projeto segue rigorosamente a metodologia **CRISP-DM** (Cross-Industry Standar
 
 | Algoritmo | Clusters | Silhouette | Observações |
 |-----------|----------|------------|-------------|
-| **K-Means** | 8 | 0.2632 | Distribuição equilibrada (1.4%-24.3% por cluster) |
-| **DBSCAN** | 3 | 0.3175 | 14.9% ruído (outliers identificados) |
+| **K-Means** | 8 | 0.263 | Distribuição equilibrada (1.4%-24.3% por cluster) |
+| **DBSCAN** | 3 | 0.317 | 14.9% ruído (outliers identificados) |
 
 **Perfis Identificados:**
 - Consumidores diurnos (pico 8h-18h)
@@ -107,22 +107,22 @@ O projeto segue rigorosamente a metodologia **CRISP-DM** (Cross-Industry Standar
 
 | Modelo | MAE | RMSE | vs Baseline |
 |--------|-----|------|-------------|
-| **Baseline** (semana anterior) | 1.22 | 1.56 | - |
-| **ARIMA** | **0.80** | **1.08** | **✓ -34.3%** |
-| **LSTM** (normalizado) | 1.13 | 1.45 | +7.4% |
+| **Baseline** (semana anterior) | 1.225 | 2.003 | - |
+| **ARIMA** | **0.804** | **1.176** | **✓ -34.4%** |
+| **LSTM** (normalizado) | 1.047 | 1.404 | **✓ +14.6%** |
 
-> **Melhor modelo:** ARIMA superou consistentemente a baseline em 34.3%
+> **Melhor modelo:** ARIMA superou consistentemente a baseline em 34.4%
 
 ### Previsão com Features (Experiência 2b)
 
 | Modelo | Normalização | MAE | RMSE |
 |--------|--------------|-----|------|
-| Random Forest | Não | 1.21 | 1.58 |
-| Random Forest | Sim | 1.22 | 1.60 |
-| XGBoost | Não | 1.44 | 1.88 |
-| XGBoost | Sim | 1.45 | 1.90 |
-| MLP | Não | 1.04 | 1.36 |
-| MLP | Sim | 1.08 | 1.42 |
+| Random Forest | Não | 1.629 | 2.168 |
+| Random Forest | Sim | 1.630 | 2.170 |
+| XGBoost | Não | 1.859 | 2.421 |
+| XGBoost | Sim | 1.859 | 2.421 |
+| MLP | Não | 1.552 | 2.143 |
+| MLP | Sim | 1.625 | 2.203 |
 
 ### Impacto da Normalização (Experiência 3)
 
@@ -415,11 +415,11 @@ Durante a execução dos notebooks, são gerados os seguintes ficheiros intermé
 
 ### Resultados Técnicos
 
-1. **ARIMA é o melhor modelo** para previsão de séries temporais neste dataset, superando a baseline em ~20%
+1. **ARIMA é o melhor modelo** para previsão de séries temporais neste dataset, superando a baseline em 34.4%
 2. **Normalização é crítica** para clustering e redes neuronais, mas irrelevante para modelos baseados em árvores
-3. **8 clusters K-Means** identificam perfis distintos de consumo
-4. **DBSCAN identifica 14.9% de outliers**, abaixo do limiar de 20%
-5. **Clusters como features** melhoram ligeiramente os modelos supervisionados
+3. **8 clusters K-Means** identificam perfis distintos de consumo com distribuição equilibrada
+4. **DBSCAN identifica 14.9% de outliers**, proporção adequada para detecção de anomalias
+5. **Modelos supervisionados** não superam baseline semanal, mas fornecem baseline técnica sólida
 
 ### Aplicações para o Município da Maia
 
